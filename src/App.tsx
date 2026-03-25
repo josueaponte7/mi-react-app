@@ -19,7 +19,7 @@ function App() {
 
   return (
     <div style={{ padding: 20 }}>
-      <h1>React + Firebase 🚀</h1>
+      <h1>React + Firebase TEST🚀</h1>
 
       <input
         value={texto}
