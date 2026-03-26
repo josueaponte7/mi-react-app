@@ -1,22 +1,39 @@
 import { useState, useEffect } from "react";
-import { db } from "./firebase";
+import { auth, db } from "./firebase";
+import { signOut } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  onAuthStateChanged
+} from "firebase/auth";
+
 import {
   collection,
   addDoc,
   onSnapshot,
   query,
-  orderBy
+  where
 } from "firebase/firestore";
 
 function App() {
+  const [user, setUser] = useState<any>(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [texto, setTexto] = useState("");
-  const [mensajes, setMensajes] = useState<any[]>([]);
+  const [tareas, setTareas] = useState<any[]>([]);
 
-  // 🔥 Escuchar datos en tiempo real
   useEffect(() => {
+    onAuthStateChanged(auth, (u) => {
+      setUser(u);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+
     const q = query(
-      collection(db, "mensajes"),
-      orderBy("fecha", "desc")
+        collection(db, "tareas"),
+        where("userId", "==", user.uid)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -24,43 +41,75 @@ function App() {
       snapshot.forEach((doc) => {
         datos.push({ id: doc.id, ...doc.data() });
       });
-      setMensajes(datos);
+      setTareas(datos);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [user]);
 
-  // 💾 Guardar datos
+  const register = () => {
+    createUserWithEmailAndPassword(auth, email, password);
+  };
+
+  const login = () => {
+    signInWithEmailAndPassword(auth, email, password);
+  };
+
+  const logout = () => {
+    signOut(auth);
+  };
+
   const guardar = async () => {
     if (!texto) return;
 
-    await addDoc(collection(db, "mensajes"), {
+    await addDoc(collection(db, "tareas"), {
       texto,
-      fecha: new Date()
+      userId: user.uid
     });
 
     setTexto("");
   };
 
+  if (!user) {
+    return (
+        <div>
+          <h2>Login</h2>
+          <input onChange={(e) => setEmail(e.target.value)} placeholder="email" />
+          <input onChange={(e) => setPassword(e.target.value)} placeholder="password" type="password" />
+          <button onClick={login}>Login</button>
+          <button onClick={register}>Register</button>
+        </div>
+    );
+  }
+
   return (
-    <div style={{ padding: 20 }}>
-      <h1>React + Firebase 🚀</h1>
+      <div>
+        <h2>Bienvenido {user.email}</h2>
 
-      <input
-        value={texto}
-        onChange={(e) => setTexto(e.target.value)}
-        placeholder="Escribe algo..."
-      />
+        <button onClick={logout}>
+          Cerrar sesión
+        </button>
 
-      <button onClick={guardar}>Guardar</button>
+        <hr />
 
-      {/* 🔥 LISTA DE DATOS */}
-      <ul>
-        {mensajes.map((m) => (
-          <li key={m.id}>{m.texto}</li>
-        ))}
-      </ul>
-    </div>
+        <input
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+            placeholder="Nueva tarea"
+        />
+
+        <button onClick={guardar}>
+          Guardar tarea
+        </button>
+
+        <h3>Tus tareas</h3>
+
+        <ul>
+          {tareas.map((t) => (
+              <li key={t.id}>{t.texto}</li>
+          ))}
+        </ul>
+      </div>
   );
 }
 
