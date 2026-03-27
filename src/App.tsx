@@ -73,11 +73,11 @@ function App() {
   if (!user) {
     return (
         <div>
-          <h2>Inicio de Sesíon</h2>
+          <h2>Inicio de Sesión</h2>
           <input onChange={(e) => setEmail(e.target.value)} placeholder="email" />
           <input onChange={(e) => setPassword(e.target.value)} placeholder="password" type="password" />
-          <button onClick={login}>Login</button>
-          <button onClick={register}>Register</button>
+          <button onClick={login}>Iniciar sesión </button>
+          <button onClick={register}>Registrate</button>
         </div>
     );
   }
